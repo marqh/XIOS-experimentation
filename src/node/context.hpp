@@ -313,7 +313,10 @@ namespace xios
          std::vector<CContextClient*> clientPrimServer;
 
          // list of slave servers (IO server or others)
-         set<CContextClient*> slaveServers_ ;
+         // Already in trunk within the new service management, commit ids = [2405-2407]
+         std::vector<CContextClient*> slaveServers_ ;
+         std::map<CContextClient*, std::string> clientsId_ ;
+
       private:
          // the map containing context client associated to it string id for coupling out ;
          std::map<std::string, CContextClient*> couplerOutClient_ ;

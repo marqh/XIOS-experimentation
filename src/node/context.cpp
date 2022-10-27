@@ -639,7 +639,8 @@ void CContext::removeAllContexts(void)
         clientPrimServer.push_back(client);
         serverPrimServer.push_back(server);  
 
-      
+      	// Already integrated in trunk with new service management commit ids = [2405-2407]
+      	clientsId_[client] = CXios::getContextsManager()->getServerContextName( CXios::defaultPoolId, CXios::defaultServerId, i, type, getContextId() ) ;
       }
     }
   }
@@ -1103,11 +1104,21 @@ void CContext::removeAllContexts(void)
     // construct slave server list
     if (serviceType_==CServicesManager::CLIENT) 
     {
-      for(auto field : fileOutField) slaveServers_.insert(field->getContextClient()) ; 
-      for(auto field : fileInField) slaveServers_.insert(field->getContextClient()) ; 
+      // Intermediary implementation looking at trunk service management commit ids = [2405-2407]
+      //  -> slaveServers from trunk (std::vector), going through a std::set
+      //  -> clientsId_ not implemented for CLIENT for now (while done in trunk within the new service management)
+      set< CContextClient*>  slaves ; // need an ordered list ;
+      for(auto field : fileOutField) slaves.insert(field->getContextClient()) ; 
+      for(auto field : fileInField) slaves.insert(field->getContextClient()) ; 
+      for(auto& slave : slaves) slaveServers_.push_back(slave) ;
     }
-    else if (serviceType_==CServicesManager::GATHERER) 
-      for(auto field : fileOutField) slaveServers_.insert(field->getContextClient()) ; 
+    else if (serviceType_==CServicesManager::GATHERER)
+    {
+      // Already integrated in trunk with new service management commit ids = [2405-2407]
+      map<string, CContextClient*> slaves ; // need an ordered list ;
+      for(auto field : fileOutField) slaves[clientsId_[field->getContextClient()]] = field->getContextClient() ;
+      for(auto& slave : slaves) slaveServers_.push_back(slave.second) ;
+    }
 
     for(auto& slaveServer : slaveServers_) sendCloseDefinition(slaveServer) ;
 
