@@ -3,6 +3,8 @@
 
 #include <string>
 #include <map>
+#include <fstream>
+#include <vector>
 
 namespace xios
 {
@@ -13,8 +15,10 @@ namespace xios
       void suspend(void);
       void resume(void);
       void reset(void);
-      double getCumulatedMem(void);
-      static double getMem(void);
+      std::vector<double> getCumulatedMem(void);
+      static std::vector<double> getMem(void);
+      static std::vector<double> getMemories(void);
+      static void logMem( std::string id, bool finalizeLog = false );
       static CMemChecker& get(std::string name);
       static std::string getAllCumulatedMem(void) ;
       static void disable(void) { enabled_=false ;}
@@ -22,8 +26,8 @@ namespace xios
       static void release(void) {allMemChecker_.clear();}
     private:
       static void check(void) ;
-      double cumulatedMem_;
-      double lastMem_;
+      std::vector<double> cumulatedMem_;
+      std::vector<double> lastMem_;
       bool suspended_;
       std::string name_;
 
@@ -31,6 +35,13 @@ namespace xios
       static CMemChecker dummy_ ;
       static bool first_ ;
       static bool enabled_ ;
+
+      static double vsize_init_;
+      static double rss_init_;
+      static double vmhwm_init_;
+      static double time_init_;
+      static std::ofstream fout_;
+      static int flush_counter_;
   };
 }
 
