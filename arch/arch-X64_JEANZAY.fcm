@@ -3,9 +3,9 @@
 #################################################################################
 
 
-%CCOMPILER      mpiicc
-%FCOMPILER      mpiifort
-%LINKER         mpiifort  -nofor-main
+%CCOMPILER      mpicxx
+%FCOMPILER      mpif90
+%LINKER         mpif90  -nofor-main
 
 %BASE_CFLAGS    -diag-disable 1125 -diag-disable 279 -std=c++11
 %PROD_CFLAGS    -O3 -D BOOST_DISABLE_ASSERTS
@@ -20,6 +20,6 @@
 %BASE_INC       -D__NONE__
 %BASE_LD        -lstdc++
 
-%CPP            mpiicc -EP
+%CPP            mpicc -EP
 %FPP            cpp -P
 %MAKE           gmake
