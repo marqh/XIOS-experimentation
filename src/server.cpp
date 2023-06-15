@@ -188,9 +188,10 @@ namespace xios
       if (serversRessource->isServerLeader())
       {
         int nbRessources = ressourcesManager->getRessourcesSize() ;
+        ressourcesManager->createPool(CXios::defaultPoolId, nbRessources) ;
+        servicesManager->createServices(CXios::defaultPoolId,  CXios::defaultServicesId, CServicesManager::ALL_SERVICES, nbRessources, 1) ;
         if (!CXios::usingServer2)
         {
-          ressourcesManager->createPool(CXios::defaultPoolId, nbRessources) ;
           servicesManager->createServices(CXios::defaultPoolId, CXios::defaultServerId, CServicesManager::IO_SERVER,nbRessources,1) ;
         }
         else
@@ -200,13 +201,11 @@ namespace xios
           
           int nbPoolsServer2 = CXios::nbPoolsServer2 ;
           if (nbPoolsServer2 == 0) nbPoolsServer2 = nprocsServer;
-          ressourcesManager->createPool(CXios::defaultPoolId, nbRessources) ;
           servicesManager->createServices(CXios::defaultPoolId,  CXios::defaultGathererId, CServicesManager::GATHERER, nprocsGatherer, 1) ;
           servicesManager->createServices(CXios::defaultPoolId,  CXios::defaultServerId, CServicesManager::OUT_SERVER, nprocsServer, nbPoolsServer2) ;
 
 
         }
-        servicesManager->createServices(CXios::defaultPoolId,  CXios::defaultServicesId, CServicesManager::ALL_SERVICES, nbRessources, 1) ;
       }
       CTimer::get("XIOS initialize").suspend() ;
 
