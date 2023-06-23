@@ -97,11 +97,11 @@ namespace xios
     while(flag)
     {
       traceOff();
-      MPI_Iprobe(MPI_ANY_SOURCE, 20,interComm, &flag, &status);
+      MPI_Iprobe(MPI_ANY_SOURCE, 20,interCommMerged_, &flag, &status);
       traceOn();
       if (flag==true)
       {
-        requests_.push_back(CRequest(interComm, status)) ;
+        requests_.push_back(CRequest(interCommMerged_, status)) ;
         if (requests_.back().test()) 
         {
           processRequest(requests_.back()) ;
