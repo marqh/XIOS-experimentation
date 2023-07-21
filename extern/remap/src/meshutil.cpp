@@ -72,7 +72,7 @@ void computePolygonGeometry(Elt& a, const Coord &pole, double& area, Coord& bary
   vect_points.clear();
   polyline.clear();
   indices_a_gno.clear();
-
+  delete [] a_gno ;
 }
 
 
