@@ -233,6 +233,7 @@ namespace xios
     double time=MPI_Wtime() ;
     if (time-bufferFromClientTime_ < bufferFromClientLatency_ ) return false;
     bufferFromClientTime_ = time ;
+    if ( bufferFromClientLatency_ < LATENCY_MAX ) bufferFromClientLatency_ *= 2; // Done to reduce pressure on windows access if not necessary (especially for read on JZ, ex : transect)
     CTimer::get("getBufferFromClient").resume() ;   
     size_t clientTimeline ;
     size_t clientCount ;
@@ -254,6 +255,7 @@ namespace xios
 
     if (timeLine==clientTimeline)
     {
+      bufferFromClientLatency_ = LATENCY_DEFAULT; // Reset latency if windows access is used
       buffer=(char*)getBuffer(clientCount) ;
       count=clientCount ;
       MPI_Get(buffer, clientCount, MPI_CHAR, windowsRank_, MPI_Aint_add(winAddress_[currentWindows],4*sizeof(size_t)) , clientCount, MPI_CHAR, windows_[currentWindows]) ;
