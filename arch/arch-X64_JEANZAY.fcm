@@ -3,11 +3,11 @@
 #################################################################################
 
 
-%CCOMPILER      mpicxx
-%FCOMPILER      mpif90
-%LINKER         mpif90  -nofor-main
+%CCOMPILER      mpiicc
+%FCOMPILER      mpiifort
+%LINKER         mpiifort  -nofor-main
 
-%BASE_CFLAGS    -diag-disable 1125 -diag-disable 279 -std=c++11
+%BASE_CFLAGS    -std=c++11 -diag-disable 1125 -diag-disable 279
 %PROD_CFLAGS    -O3 -D BOOST_DISABLE_ASSERTS
 %DEV_CFLAGS     -g -traceback
 %DEBUG_CFLAGS   -DBZ_DEBUG -g -traceback -fno-inline
@@ -20,6 +20,6 @@
 %BASE_INC       -D__NONE__
 %BASE_LD        -lstdc++
 
-%CPP            mpicc -EP
+%CPP            mpiicc -EP
 %FPP            cpp -P
 %MAKE           gmake
