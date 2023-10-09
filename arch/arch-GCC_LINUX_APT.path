@@ -1,5 +1,9 @@
-NETCDF_INCDIR="-I $NETCDF_INC_DIR"
-NETCDF_LIBDIR="-L $NETCDF_LIB_DIR"
+NETCDF_INCDIR=""
+IFS=':' read -r -a array <<< "$NETCDF_INC_DIR"
+for element in "${array[@]}"; do NETCDF_INCDIR+="-I $element "; done
+NETCDF_LIBDIR=""
+IFS=':' read -r -a array <<< "$NETCDF_LIB_DIR"
+for element in "${array[@]}"; do NETCDF_LIBDIR+="-I $element "; done
 NETCDF_LIB="-lnetcdff -lnetcdf"
 
 MPI_INCDIR=""
