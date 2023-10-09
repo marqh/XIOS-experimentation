@@ -1,0 +1,6 @@
+g++
+mpich
+libboost-mpi1.81-dev
+libhdf5-mpich-fortran-102
+libnetcdff-dev
+libnetcdf-mpi-dev
