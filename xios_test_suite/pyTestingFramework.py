@@ -23,31 +23,28 @@ class TestXIOSSuite(unittest.TestCase):
         # where the exe and all relevant config exists.
         this_cwd = os.getcwd()
         os.chdir(atest_dir)
-        print('\nrunning test in\n{}'.format(atest_dir))
-        print(' '.join(acall))
+        print('\nrunning test in\n{}'.format(atest_dir), flush=True)
+        print(' '.join(acall), flush=True)
         try:
             subprocess.check_call(acall)
         except Exception as e:
             raise e
         finally:
+            subprocess.check_call("find . -name '*.nc'", shell=True)
             os.chdir(this_cwd)
 
-    def _checkfile(self, checkfile, check_test_dir):
+    def _checkfile(self, expected_fnames, check_test_dir):
         """
         parse the checkfile and assert that all the expected files have
         been created
         
         """
-        expected_fnames = set()
-        with open(checkfile) as cfile:
-            for line in cfile.readlines():
-                if not line.startswith('#') and line.endswith('.nc\n'):
-                    expected_fnames.add(line.strip())
         actual_fnames = set([os.path.basename(apath) for apath in
                              glob.glob('{}/*.nc'.format(check_test_dir))])
         msg = ('the following files were expected within {} but do not exist'
                '\n{}').format(check_test_dir,
                               ' '.join(expected_fnames - actual_fnames))
+        # assert that all the .nc files within checkfile.def have been created
         self.assertTrue(expected_fnames.issubset(actual_fnames), msg)
 
 
@@ -86,9 +83,6 @@ with open(os.path.join(test_root, 'TEST_SUITE', 'default_param.json'), 'r') as d
 for atest_dir in test_dirs:
     # iterate through existing tests to create test run directories
     # and test cases
-    if atest_dir.endswith('test_dynamico_algo'):
-        # this test is hanging, and we don't see why: skip for now
-        continue
     with open(os.path.join(atest_dir, 'user_param_basic.json'), 'r') as uparam:
         # stick to basic tests, for enhanced portability
         config_list = []
@@ -123,7 +117,7 @@ for atest_dir in test_dirs:
                 new_iodef = new_iodef.replace(xpattern + param[0], str(param[1]))
             if xpattern in new_iodef:
                 matching_lines = [line for line in new_iodef.split('\n') if xpattern in line]
-                print(matching_lines)
+                # print(matching_lines)
                 raise ValueError('params not updated: {}'.format('\n'.join(matching_lines)))
             with open(os.path.join(run_test_dir, 'iodef.xml'), 'w') as test_iodef:
                 # new iodef.xml in run_test_dir
@@ -151,16 +145,26 @@ for atest_dir in test_dirs:
         if not os.path.exists(os.path.join(run_test_dir, 'context_atm.xml')):
             os.symlink(os.path.join(atest_dir, 'context_atm.xml'),
                        os.path.join(run_test_dir, 'context_atm.xml'))
-        # hold n clients at 1 whilst messaging issue persists
+        # hold n processes at 2 whilst messaging issue persists
         # acall = ['mpirun', '-np', str(config_dict["NumberClients"] + 1), 'generic_testcase.exe']
-        acall = ['mpirun', '-np', '1', 'generic_testcase.exe']
+        acall = ['mpirun', '-np', '2', 'generic_testcase.exe']
 
         def make_a_test(the_test_dir, acall):
             """
-            function to create a test case, with copies of required information
+            function to create a test case, with copies of required information.
+            copies and deep copies are needed as teh test_xios function will be run
+            within the test case, not in line.
+            
             """
             test_dir = copy.copy(the_test_dir)
-            call = copy.copy(acall)
+            call = copy.deepcopy(acall)
+            expected_fnames_tmp = set()
+            checkfile = os.path.join(atest_dir, 'checkfile.def')
+            with open(checkfile) as cfile:
+                for line in cfile.readlines():
+                    if not line.startswith('#') and line.endswith('.nc\n'):
+                        expected_fnames_tmp.add(line.strip())
+            expected_fnames = copy.deepcopy(expected_fnames_tmp)
             def test_xios(self):
                 """
                 the test function which will be added to the test class
@@ -169,7 +173,7 @@ for atest_dir in test_dirs:
                 
                 """
                 self._run_mpi_testcase(test_dir, call)
-                self._checkfile(os.path.join(atest_dir, 'checkfile.def'), test_dir)
+                self._checkfile(expected_fnames, test_dir)
 
             return test_xios
         tname = 'test_{}{}'.format(os.path.basename(atest_dir), tindex)
@@ -180,7 +184,5 @@ for atest_dir in test_dirs:
 
 if __name__ == '__main__':
     # run the unittest framework
-    try:
-        unittest.main()
-    finally:
-        subprocess.check_call('find xios_test_suite/TEST_SUITE/run_test_dirs/ -name *.nc', shell=True)
+    unittest.main()
+
