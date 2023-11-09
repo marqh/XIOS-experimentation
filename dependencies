@@ -1,8 +1,7 @@
 g++
-mpich
+openmpi
 libboost-mpi1.74-dev
 libhdf5-openmpi-dev
-libhdf5-mpich-fortran-102
 libnetcdff-dev
 libnetcdf-mpi-dev
 libnetcdff-dev
