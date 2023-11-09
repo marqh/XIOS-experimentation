@@ -1,5 +1,5 @@
 g++
-openmpi
+libopenmpi-dev
 libboost-mpi1.74-dev
 libhdf5-openmpi-dev
 libnetcdff-dev
