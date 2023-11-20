@@ -29,7 +29,9 @@ namespace xios
     }
     
     notifyType_=NOTIFY_NOTHING;
-    winNotify_->updateToExclusiveWindow(commRank, this, &CPoolRessource::notificationsDumpOut) ;
+    winNotify_->lockWindow(commRank,0) ;
+    winNotify_->updateToWindow(commRank, this, &CPoolRessource::notificationsDumpOut) ;
+    winNotify_->unlockWindow(commRank,0) ;
     MPI_Barrier(poolComm_) ;
     if (eventScheduler) eventScheduler_=eventScheduler ;
     else eventScheduler_= make_shared<CEventScheduler>(poolComm) ;
@@ -132,14 +134,18 @@ namespace xios
 
   void CPoolRessource::sendNotification(int rank)
   {
-    winNotify_->pushToExclusiveWindow(rank, this, &CPoolRessource::notificationsDumpOut) ;
+    winNotify_->lockWindowExclusive(rank) ; 
+    winNotify_->pushToLockedWindow(rank, this, &CPoolRessource::notificationsDumpOut) ; 
+    winNotify_->unlockWindow(rank) ; 
   }
 
   void CPoolRessource::checkNotifications(void)
   {
     int commRank ;
     MPI_Comm_rank(poolComm_, &commRank) ;
-    winNotify_->popFromExclusiveWindow(commRank, this, &CPoolRessource::notificationsDumpIn) ;
+    winNotify_->lockWindowExclusive(commRank) ;
+    winNotify_->popFromLockedWindow(commRank, this, &CPoolRessource::notificationsDumpIn) ;
+    winNotify_->unlockWindow(commRank) ; 
     if (notifyType_==NOTIFY_CREATE_SERVICE) 
     {
       if (CThreadManager::isUsingThreads()) synchronize() ;

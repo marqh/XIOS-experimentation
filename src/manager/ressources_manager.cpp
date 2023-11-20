@@ -49,7 +49,9 @@ namespace xios
   {
     info(40)<<"CRessourcesManager::createPool : calling createPool : "<<poolId<<"  of size"<<size<<endl ;
     info(40)<<"send notification to leader : "<<serverLeader_<<endl ;
-    winRessources_->updateFromExclusiveWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ;
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ;
     
     notifyType_=NOTIFY_CREATE_POOL ;
     notifyCreatePool_=make_tuple(poolId, size) ;
@@ -59,7 +61,9 @@ namespace xios
   
   void CRessourcesManager::finalize(void)
   {
-    winRessources_->updateFromExclusiveWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ;
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ;
    
     if (serverLeader_!=-1)
     {
@@ -73,7 +77,7 @@ namespace xios
   {
     winNotify_->lockWindowExclusive(rank) ;
     winNotify_->pushToLockedWindow(rank, this, &CRessourcesManager::notificationsDumpOut) ;
-    winNotify_->unlockWindowExclusive(rank) ;
+    winNotify_->unlockWindow(rank) ; 
   }
 
   
@@ -135,7 +139,7 @@ namespace xios
     winNotify_->popFromLockedWindow(commRank, this, &CRessourcesManager::notificationsDumpIn) ;
     CTimer::get("CRessourcesManager::checkNotifications pop").suspend();
     CTimer::get("CRessourcesManager::checkNotifications unlock").resume();
-    winNotify_->unlockWindowExclusive(commRank) ;
+    winNotify_->unlockWindow(commRank) ;
     CTimer::get("CRessourcesManager::checkNotifications unlock").suspend();
     if (notifyType_==NOTIFY_CREATE_POOL) createPool() ;
     else if (notifyType_==NOTIFY_FINALIZE) finalizeSignal() ;
@@ -192,46 +196,48 @@ namespace xios
   
   void CRessourcesManager::registerServerLeader(int serverLeaderRank)
   {
-    winRessources_->lockWindowExclusive(managerGlobalLeader_) ;
-    winRessources_->updateFromLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ;
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
     serverLeader_ = serverLeaderRank ;
-    winRessources_->updateToLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
-    winRessources_->unlockWindowExclusive(managerGlobalLeader_) ;    
+    winRessources_->updateToWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ;
   }
   
   void CRessourcesManager::registerRessourcesSize(int size)
   {
-    winRessources_->lockWindowExclusive(managerGlobalLeader_) ;
-    winRessources_->updateFromLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ;
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ; 
     ressourcesSize_ = size ;
     freeRessourcesSize_ = size ;
-    winRessources_->updateToLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
-    winRessources_->unlockWindowExclusive(managerGlobalLeader_) ;    
+    winRessources_->updateToWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ;     
   }
 
  
   void CRessourcesManager::registerPoolClient(const string& poolId, int size, int leader)
   {
-    winRessources_->lockWindowExclusive(managerGlobalLeader_) ;
-    winRessources_->updateFromLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ;
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ; 
     pools_[poolId] = make_tuple(size, size, leader) ;
-    winRessources_->updateToLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
-    winRessources_->unlockWindowExclusive(managerGlobalLeader_) ;    
+    winRessources_->updateToWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ;     
   }
 
   void CRessourcesManager::registerPoolServer(const string& poolId, int size, int leader)
   {
-    winRessources_->lockWindowExclusive(managerGlobalLeader_) ;
-    winRessources_->updateFromLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ;
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ; 
     pools_[poolId] = make_tuple(size, size, leader) ;
     freeRessourcesSize_-=size ;
-    winRessources_->updateToLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
-    winRessources_->unlockWindowExclusive(managerGlobalLeader_) ;    
+    winRessources_->updateToWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ;     
   }
 
   bool CRessourcesManager::getPoolInfo(const string& poolId, int& size, int& freeSize, int& leader)
   {
-    winRessources_->updateFromSharedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ; 
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ; 
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ; 
 
     auto it=pools_.find(poolId) ;
     if ( it == pools_.end()) return false ;
@@ -248,8 +254,8 @@ namespace xios
   {
     bool ret ;
 
-    winRessources_->lockWindowExclusive(managerGlobalLeader_) ;
-    winRessources_->updateFromLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ;
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ; 
    
 
     auto it=pools_.find(poolId) ;
@@ -260,22 +266,26 @@ namespace xios
       get<1>(it->second)-=size ;
       ret=true ;
     }
-    winRessources_->updateToLockedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
-    winRessources_->unlockWindowExclusive(managerGlobalLeader_) ; 
+    winRessources_->updateToWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpOut) ;
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ;
 
     return ret ;   
   }
 
   int CRessourcesManager::getRessourcesSize(void)
   {
-    winRessources_->updateFromSharedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ;
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ; 
     
     return ressourcesSize_ ;
   }
 
   int CRessourcesManager::getFreeRessourcesSize(void)
   {
-    winRessources_->updateFromSharedWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->lockWindow(managerGlobalLeader_,0) ;
+    winRessources_->updateFromWindow(managerGlobalLeader_, this, &CRessourcesManager::ressourcesDumpIn) ;
+    winRessources_->unlockWindow(managerGlobalLeader_,0) ;
 
     return freeRessourcesSize_ ;
   } 

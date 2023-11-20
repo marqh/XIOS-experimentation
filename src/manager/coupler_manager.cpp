@@ -22,8 +22,13 @@ namespace xios
     winNextCoupling_ = new CWindowManager(xiosComm_, maxBufferSize_,"CCouplerManager::winNextCoupling_") ;
     if (commRank==managerGlobalLeader_)
     {
-      winRegistredCoupling_->updateToExclusiveWindow(managerGlobalLeader_, this, &CCouplerManager::registredCouplingDumpOut) ;
-      winNextCoupling_->updateToExclusiveWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpOut) ;
+      winRegistredCoupling_->lockWindow(managerGlobalLeader_,0) ; 
+      winRegistredCoupling_->updateToWindow(managerGlobalLeader_, this, &CCouplerManager::registredCouplingDumpOut) ; 
+      winRegistredCoupling_->unlockWindow(managerGlobalLeader_,0) ; 
+         
+      winNextCoupling_->lockWindow(managerGlobalLeader_,0) ; 
+      winNextCoupling_->updateToWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpOut) ; 
+      winNextCoupling_->unlockWindow(managerGlobalLeader_,0) ; 
     }
 
     MPI_Barrier(xiosComm_)  ;    
@@ -41,24 +46,24 @@ namespace xios
     hash<string> strHash ;
     size_t key = strHash(getStrCoupling(srcCoupling,dstCoupling)) ;
     
-    winRegistredCoupling_->lockWindowExclusive(managerGlobalLeader_) ;
-    winRegistredCoupling_->updateFromLockedWindow(managerGlobalLeader_, this, &CCouplerManager::registredCouplingDumpIn) ;
+    winRegistredCoupling_->lockWindow(managerGlobalLeader_,0) ; 
+    winRegistredCoupling_->updateFromWindow(managerGlobalLeader_, this, &CCouplerManager::registredCouplingDumpIn) ;
     if (registredCoupling_.count(key)==1)
     {
       registredCoupling_.erase(key) ;
-      winRegistredCoupling_->updateToLockedWindow(managerGlobalLeader_, this, &CCouplerManager::registredCouplingDumpOut) ;
-      winNextCoupling_->lockWindowExclusive(managerGlobalLeader_) ;
-      winNextCoupling_->updateFromLockedWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpIn) ;
+      winRegistredCoupling_->updateToWindow(managerGlobalLeader_, this, &CCouplerManager::registredCouplingDumpOut) ;
+      winNextCoupling_->lockWindow(managerGlobalLeader_,0) ;
+      winNextCoupling_->updateFromWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpIn) ;
       nextCoupling_.push_back(pair<size_t,int>(key,2)) ;
-      winNextCoupling_->updateToLockedWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpOut) ;
-      winNextCoupling_->unlockWindowExclusive(managerGlobalLeader_) ;
+      winNextCoupling_->updateToWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpOut) ;
+      winNextCoupling_->unlockWindow(managerGlobalLeader_,0) ;
     }
     else 
     {
       registredCoupling_.insert(key) ;
-      winRegistredCoupling_->updateToLockedWindow(managerGlobalLeader_, this, &CCouplerManager::registredCouplingDumpOut) ;
+      winRegistredCoupling_->updateToWindow(managerGlobalLeader_, this, &CCouplerManager::registredCouplingDumpOut) ;
     }
-    winRegistredCoupling_->unlockWindowExclusive(managerGlobalLeader_) ;
+    winRegistredCoupling_->unlockWindow(managerGlobalLeader_,0) ;
   }
 
   bool CCouplerManager::isNextCoupling(string srcCoupling, string dstCoupling)
@@ -67,17 +72,17 @@ namespace xios
     hash<string> strHash ;
     size_t key = strHash(getStrCoupling(srcCoupling,dstCoupling)) ;
 
-    winNextCoupling_->lockWindowExclusive(managerGlobalLeader_) ;
-    winNextCoupling_->updateFromLockedWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpIn) ;
+    winNextCoupling_->lockWindow(managerGlobalLeader_,0) ;
+    winNextCoupling_->updateFromWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpIn) ; 
     if (nextCoupling_.front().first==key)
     {
       ret=true ;
       if (nextCoupling_.front().second==1) nextCoupling_.pop_front() ;
       else nextCoupling_.front().second=1 ;
-      winNextCoupling_->updateToLockedWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpOut) ;
+      winNextCoupling_->updateToWindow(managerGlobalLeader_, this, &CCouplerManager::nextCouplingDumpOut) ;
     }
     else ret=false ;
-    winNextCoupling_->unlockWindowExclusive(managerGlobalLeader_) ;
+    winNextCoupling_->unlockWindow(managerGlobalLeader_,0) ;
     return ret ;
   }
   void CCouplerManager::registredCouplingDumpOut(CBufferOut& buffer)
