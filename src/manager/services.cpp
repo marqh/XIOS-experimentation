@@ -28,7 +28,9 @@ namespace xios
     MPI_Comm_rank(serviceComm_,&localRank) ;
     
     winNotify_ = new CWindowManager(serviceComm_, maxBufferSize_,"CService::winNotify_") ;
-    winNotify_->updateToExclusiveWindow(localRank, this, &CService::createContextDumpOut) ;
+    winNotify_->lockWindow(localRank,0) ;
+    winNotify_->updateToWindow(localRank, this, &CService::createContextDumpOut) ;
+    winNotify_->unlockWindow(localRank,0) ; 
     MPI_Barrier(serviceComm_) ;
     if (localRank==localLeader_) 
     {
@@ -48,7 +50,7 @@ namespace xios
 
   CService::~CService()
   {
-    delete winNotify_ ;
+    //delete winNotify_ ;
     for(auto& it : contexts_) delete it.second ;
   }
 
@@ -75,11 +77,11 @@ namespace xios
 */
   void CService::createContextNotify(int rank, const std::string& poolId, const std::string& serviceId, const int& partitionId, const std::string& contextId)
   {
-    winNotify_->lockWindowExclusive(rank) ;
-    winNotify_->updateFromLockedWindow(rank, this, &CService::createContextDumpIn) ;
+    winNotify_->lockWindow(rank,0) ;
+    winNotify_->updateFromWindow(rank, this, &CService::createContextDumpIn) ; 
     notifications_.push_back(std::make_tuple(poolId, serviceId, partitionId, contextId)) ;
-    winNotify_->updateToLockedWindow(rank, this, &CService::createContextDumpOut) ;  
-    winNotify_->unlockWindowExclusive(rank) ;   
+    winNotify_->updateToWindow(rank, this, &CService::createContextDumpOut) ;
+    winNotify_->unlockWindow(rank,0) ;   
   }
 
 
@@ -188,7 +190,9 @@ namespace xios
 
   void CService::sendNotification(int rank)
   {
-    winNotify_->pushToExclusiveWindow(rank, this, &CService::notificationsDumpOut) ;
+    winNotify_->lockWindowExclusive(rank) ;
+    winNotify_->pushToLockedWindow(rank, this, &CService::notificationsDumpOut) ;
+    winNotify_->unlockWindow(rank) ; 
   }
 
   
@@ -230,7 +234,9 @@ namespace xios
       {
         int commRank ;
         MPI_Comm_rank(serviceComm_, &commRank) ;
-        winNotify_->popFromExclusiveWindow(commRank, this, &CService::notificationsDumpIn) ;
+        winNotify_->lockWindowExclusive(commRank) ;
+        winNotify_->popFromLockedWindow(commRank, this, &CService::notificationsDumpIn) ;
+        winNotify_->unlockWindow(commRank) ; 
         
         if (notifyInType_!= NOTIFY_NOTHING)
         {
@@ -268,17 +274,17 @@ namespace xios
   {
     int commRank ;
     MPI_Comm_rank(serviceComm_, &commRank) ;
-    winNotify_->lockWindowExclusive(commRank) ;
-    winNotify_->updateFromLockedWindow(commRank, this, &CService::createContextDumpIn) ;
+    winNotify_->lockWindow(commRank,0) ;
+    winNotify_->updateFromWindow(commRank, this, &CService::createContextDumpIn) ; 
     
     if (!notifications_.empty())
     {
       auto info = notifications_.front() ;
       createNewContext(get<0>(info), get<1>(info), get<2>(info), get<3>(info)) ;
       notifications_.pop_front() ;
-      winNotify_->updateToLockedWindow(commRank, this, &CService::createContextDumpOut) ;     
+      winNotify_->updateToWindow(commRank, this, &CService::createContextDumpOut) ;
     }
-    winNotify_->unlockWindowExclusive(commRank) ;
+    winNotify_->unlockWindow(commRank,0) ;
   }
 
   void CService::createContext(void)
