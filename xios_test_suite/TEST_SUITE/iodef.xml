@@ -49,6 +49,7 @@
       <variable_group id="buffer">
   <variable id="min_buffer_size" type="int">10000000</variable>
   <variable id="optimal_buffer_size" type="string">performance</variable>
+  <variable id="transport_protocol" type="string" >p2p</variable>
   <!--variable id="buffer_factor_size" type="double">0.8</variable-->
       </variable_group>
 
