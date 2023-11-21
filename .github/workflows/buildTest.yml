@@ -19,4 +19,6 @@ jobs:
           ls -l bin/
       - name: run xios_test_suite
         run: |
+          echo -e 'btl_base_warn_component_unused=0\nmpi_show_mca_params = 1\nmpi_show_mca_params_file = this_mca_params.out' > $HOME/.openmpi/mca-params.conf
           python3 -m xios_test_suite.pyTestingFramework
+          cat this_mca_params.out
